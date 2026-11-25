@@ -19,11 +19,14 @@ async function seedDemoStudents() {
 
   const studentIds = Array.from({ length: 44 }, (_, index) => `alum-demo-${String(index + 1).padStart(2, '0')}`)
 
-  // 1. Registrar primero los 44 alumnos en la tabla padre 'students'
-  const demoStudents = studentIds.map((id, index) => ({
-    id,
-    name: `Estudiante Demo ${String(index + 1).padStart(2, '0')}`,
-  }))
+  // 1. Registrar los 44 alumnos demo + Sofía (#45) en la tabla padre 'students'
+  const demoStudents = [
+    ...studentIds.map((id, index) => ({
+      id,
+      name: `Estudiante Demo ${String(index + 1).padStart(2, '0')}`,
+    })),
+    { id: 'alum-demo-45', name: 'Sofía' },
+  ]
 
   const { error: studentsError } = await supabase
     .from('students')
@@ -33,7 +36,7 @@ async function seedDemoStudents() {
     throw new Error(`No se pudieron registrar los alumnos en students: ${studentsError.message}`)
   }
 
-  // 2. Revisar resultados existentes e insertar los faltantes
+  // 2. Revisar resultados existentes e insertar los faltantes (solo para los primeros 44)
   const { data: existingRows, error: readError } = await supabase
     .from('diagnostic_results')
     .select('student_id, topic')
@@ -54,13 +57,13 @@ async function seedDemoStudents() {
   )
 
   if (rows.length === 0) {
-    console.log('Los 44 perfiles demo ya tienen resultados por tema; no se insertaron filas.')
+    console.log('Los 44 perfiles demo ya tienen resultados por tema y Sofía (#45) quedó registrada.')
     return
   }
 
   const { error: insertError } = await supabase.from('diagnostic_results').insert(rows)
   if (insertError) throw new Error(`No se pudieron cargar los datos demo: ${insertError.message}`)
-  console.log(`Se agregaron ${rows.length} resultados demo para los 44 alumnos. Sofía (#45) permanece libre.`)
+  console.log(`Se agregaron ${rows.length} resultados demo para los 44 alumnos. Sofía (#45) quedó registrada y libre.`)
 }
 
 seedDemoStudents().catch((error: unknown) => {
