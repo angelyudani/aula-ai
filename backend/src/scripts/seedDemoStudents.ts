@@ -18,6 +18,22 @@ async function seedDemoStudents() {
   }
 
   const studentIds = Array.from({ length: 44 }, (_, index) => `alum-demo-${String(index + 1).padStart(2, '0')}`)
+
+  // 1. Registrar primero los 44 alumnos en la tabla padre 'students'
+  const demoStudents = studentIds.map((id, index) => ({
+    id,
+    name: `Estudiante Demo ${String(index + 1).padStart(2, '0')}`,
+  }))
+
+  const { error: studentsError } = await supabase
+    .from('students')
+    .upsert(demoStudents, { onConflict: 'id' })
+
+  if (studentsError) {
+    throw new Error(`No se pudieron registrar los alumnos en students: ${studentsError.message}`)
+  }
+
+  // 2. Revisar resultados existentes e insertar los faltantes
   const { data: existingRows, error: readError } = await supabase
     .from('diagnostic_results')
     .select('student_id, topic')
