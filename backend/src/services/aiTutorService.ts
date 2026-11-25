@@ -58,16 +58,16 @@ Genera únicamente la pista de nivel ${hintLevel}.
   try {
     // Reloj de arena: si Gemini tarda más de 4 segundos, salta al Plan B
     const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("AI_TIMEOUT")), 4000)
+      setTimeout(() => reject(new Error("AI_TIMEOUT")), 6000)
     );
 
     const aiPromise = ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.8-flash",
       contents: userPrompt,
       config: {
         systemInstruction,
         temperature: 0.4,
-        maxOutputTokens: 200
+        maxOutputTokens: 600
       }
     });
 
