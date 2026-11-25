@@ -1,121 +1,141 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useCallback, useEffect, useState } from 'react'
+import Navbar, { type Mode, type Section } from './components/Navbar'
+import StudentDiagnostic from './pages/StudentDiagnostic'
+import StudentPractice from './pages/StudentPractice'
+import StudentProgress from './pages/StudentProgress'
+import StudentReading from './pages/StudentReading'
+import TeacherDashboard from './pages/TeacherDashboard'
+import ProfileAvatar from './components/ProfileAvatar'
+import CustomCursor from './components/CustomCursor'
+import { initialPracticeStats, type DiagnosticReport, type PracticeStats } from './types/student'
+
+export type NavigationRequest = { section: Section; sequence: number }
+type Theme = 'dark' | 'light'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [theme, setTheme] = useState<Theme>(() => {
+    try {
+      return window.localStorage.getItem('aula-ai-theme') === 'light' ? 'light' : 'dark'
+    } catch {
+      return 'dark'
+    }
+  })
+  const [profileImage, setProfileImage] = useState<string | null>(() => {
+    try {
+      return window.localStorage.getItem('aula-ai-profile-photo')
+    } catch {
+      return null
+    }
+  })
+  const [mode, setMode] = useState<Mode>('student')
+  const [activeSection, setActiveSection] = useState<Section>('inicio')
+  const [navigationRequest, setNavigationRequest] = useState<NavigationRequest>({ section: 'inicio', sequence: 0 })
+  const [diagnosticReport, setDiagnosticReport] = useState<DiagnosticReport | null>(null)
+  const [practiceStats, setPracticeStats] = useState<PracticeStats>(initialPracticeStats)
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    try {
+      window.localStorage.setItem('aula-ai-theme', theme)
+    } catch {
+      // Keep the selected theme for this session when storage is unavailable.
+    }
+  }, [theme])
+
+  useEffect(() => {
+    try {
+      if (profileImage) window.localStorage.setItem('aula-ai-profile-photo', profileImage)
+      else window.localStorage.removeItem('aula-ai-profile-photo')
+    } catch {
+      // The chosen image stays available for this session if storage is unavailable.
+    }
+  }, [profileImage])
+
+  const handleNavigate = useCallback((section: Section) => {
+    setNavigationRequest((current) => ({ section, sequence: current.sequence + 1 }))
+    setActiveSection(section)
+  }, [])
+
+  const handleSectionChange = useCallback((section: Section) => {
+    setActiveSection(section)
+  }, [])
+
+  const handleModeChange = (nextMode: Mode) => {
+    setMode(nextMode)
+    if (nextMode === 'student') setActiveSection('inicio')
+  }
+
+  const sectionTitles: Record<Section, string> = {
+    inicio: 'Aprende a tu ritmo',
+    diagnostico: 'Tu punto de partida',
+    practica: 'Practica a tu ritmo',
+    progreso: 'Tus avances, paso a paso',
+    lectura: 'Explora y comprende',
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="app-shell">
+      <CustomCursor />
+      <div className="ambient ambient-top" aria-hidden="true" />
+      <div className="ambient ambient-side" aria-hidden="true" />
+      <Navbar mode={mode} activeSection={activeSection} onModeChange={handleModeChange} onNavigate={handleNavigate} profileImage={profileImage} onProfileImageChange={setProfileImage} />
 
-      <div className="ticks"></div>
+      <main className="main-area">
+        <header className="topbar">
+          <div className="topbar-title">
+            <span className="breadcrumb">AULA AI <span>/</span> {mode === 'student' ? 'ESPACIO DEL ESTUDIANTE' : 'ESPACIO DOCENTE'}</span>
+          <h2>{mode === 'student' ? sectionTitles[activeSection] : 'Tu grupo, más cerca'}</h2>
+          </div>
+          <div className="topbar-right">
+            <button
+              className="theme-toggle"
+              type="button"
+              onClick={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')}
+              aria-label={`Cambiar a modo ${theme === 'dark' ? 'claro' : 'oscuro'}`}
+              aria-pressed={theme === 'light'}
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                {theme === 'dark' ? <><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" /></> : <path d="M20.5 15.2A8.7 8.7 0 0 1 8.8 3.5a8.8 8.8 0 1 0 11.7 11.7Z" />}
+              </svg>
+              <span>{theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}</span>
+            </button>
+            <span className="session-pill"><span className="live-dot" /> Sesión de demostración</span>
+            <ProfileAvatar name="Sofía" image={profileImage} variant="topbar" onImageChange={setProfileImage} />
+          </div>
+        </header>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        {mode === 'student' ? (
+          <>
+            <div hidden={activeSection !== 'inicio' && activeSection !== 'diagnostico'}>
+              <StudentDiagnostic
+                navigationRequest={navigationRequest}
+                onSectionChange={handleSectionChange}
+                onComplete={setDiagnosticReport}
+                onStart={() => setDiagnosticReport(null)}
+                onExploreReading={() => handleNavigate('lectura')}
+                profileImage={profileImage}
+              />
+            </div>
+            <div hidden={activeSection !== 'practica'}>
+              <StudentPractice report={diagnosticReport} stats={practiceStats} onStatsChange={setPracticeStats} onNavigate={handleNavigate} />
+            </div>
+            <div hidden={activeSection !== 'progreso'}>
+              <StudentProgress report={diagnosticReport} stats={practiceStats} onNavigate={handleNavigate} />
+            </div>
+            <div hidden={activeSection !== 'lectura'}>
+              <StudentReading onNavigate={handleNavigate} />
+            </div>
+          </>
+        ) : (
+          <TeacherDashboard />
+        )}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+        <footer className="app-footer">
+          <span>Hecho para aprender, paso a paso.</span>
+          <span className="footer-right"><span className="footer-star">✦</span> AULA AI <span className="footer-separator">·</span> 2026</span>
+        </footer>
+      </main>
+    </div>
   )
 }
 

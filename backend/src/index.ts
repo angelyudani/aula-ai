@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import diagnosticRoutes from './routes/diagnosticRoutes';
+import teacherRoutes from './routes/teacherRoutes';
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/', diagnosticRoutes);
+app.use('/', teacherRoutes);
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
