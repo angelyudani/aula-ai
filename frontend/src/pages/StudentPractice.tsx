@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { DiagnosticReport, PracticeStats, StudentTopic } from '../types/student'
 import { topicLabels, weakestTopic } from '../types/student'
 import type { Section } from '../components/Navbar'
+import { TutorChat } from '../components/TutorChat'
 
 type Exercise = {
   id: string
@@ -41,6 +42,16 @@ const exercises: Record<StudentTopic, Exercise[]> = {
     { id: 'practice-mult-04', prompt: '¿Cuánto es 7 × 6?', options: ['36', '42', '48', '40'], answer: '42', hints: ['Puedes pensar en 5 × 6 y agregar 2 × 6.', 'Calcula 30 + 12.', 'Suma los productos parciales.'], encouragement: 'Busca una tabla que recuerdes y completa lo que falta.' },
     { id: 'practice-mult-05', prompt: '¿Cuánto es 9 × 8?', options: ['64', '72', '81', '68'], answer: '72', hints: ['Piensa en 10 grupos de 8 y quita un grupo.', 'Calcula 10 × 8.', 'Resta 8 al producto.'], encouragement: 'La tabla del diez puede servirte como punto de partida.' },
   ],
+}
+
+function inferPracticeErrorPattern(topic: StudentTopic, selected: string): string {
+  if (topic === 'fracciones') {
+    if (selected === '2/6' || selected === '2/9' || selected === '2/10') return 'suma_lineal_denominadores'
+    return 'denominador_comun_fracciones'
+  }
+  if (topic === 'suma') return 'reagrupacion_valor_posicional'
+  if (topic === 'resta') return 'desagrupacion_o_conversion_unidades'
+  return 'descomposicion_factores_tablas'
 }
 
 function recommendationReason(topic: StudentTopic, percentage: number) {
@@ -118,7 +129,7 @@ export default function StudentPractice({
         updatedAt: new Date().toISOString(),
       })
     } else {
-      setMessage('Aún no coincide. Revisa tu estrategia y vuelve a intentarlo con una pista.')
+      setMessage('Aún no coincide. Revisa tu estrategia y vuelve a intentarlo con el Tutor IA.')
       setHintLevel((current) => Math.min(current + 1, exercise.hints.length))
       updateStats(false)
     }
@@ -147,8 +158,8 @@ export default function StudentPractice({
   return (
     <section className="student-page" aria-labelledby="practice-title">
       <div className="student-page-heading practice-page-heading">
-        <div><span className="eyebrow muted-eyebrow">TU RUTA DE APRENDIZAJE</span><h1 id="practice-title">Practica a tu ritmo, Eli.</h1><p>Usamos tu diagnóstico para proponer el siguiente paso. Cada error te da una pista para razonar.</p></div>
-        <span className="session-data-pill"><span className="live-dot" /> Sesión local</span>
+        <div><span className="eyebrow muted-eyebrow">TU RUTA DE APRENDIZAJE</span><h1 id="practice-title">Practica a tu ritmo, Sofía.</h1><p>Usamos tu diagnóstico para proponer el siguiente paso. Cada error te da una pista para razonar.</p></div>
+        <span className="session-data-pill"><span className="live-dot" /> Conectado a AULA AI</span>
       </div>
 
       <div className="practice-overview-grid">
@@ -174,7 +185,7 @@ export default function StudentPractice({
         <article className="exercise-card glass-panel" aria-labelledby="exercise-question" key={`${topic}-${exercise.id}`}>
           <div className="exercise-card-head"><div><span className="eyebrow muted-eyebrow">EJERCICIO {String(index + 1).padStart(2, '0')} <span className="exercise-total">/ {String(topicExercises.length).padStart(2, '0')}</span></span><h2>{topicLabels[topic]}</h2></div><span className="exercise-kind">PRACTIQUEMOS</span></div>
           <div className="exercise-progress-track" aria-hidden="true"><span style={{ width: `${Math.round(((index + 1) / topicExercises.length) * 100)}%` }} /></div>
-          <div className="exercise-question-block"><span className="question-kicker">PIENSA PASO A PASO</span><h3 id="exercise-question">{exercise.prompt}</h3><p>Elige una opción. Si necesitas apoyo, pide una pista antes de comprobar.</p></div>
+          <div className="exercise-question-block"><span className="question-kicker">PIENSA PASO A PASO</span><h3 id="exercise-question">{exercise.prompt}</h3><p>Elige una opción. Si necesitas apoyo, pide una pista al Tutor IA antes de comprobar.</p></div>
           <div className="exercise-options" role="group" aria-label="Opciones de respuesta">
             {exercise.options.map((option, optionIndex) => <button key={option} type="button" className={`answer-option ${answer === option ? 'is-selected' : ''}`} aria-pressed={answer === option} disabled={solved} onClick={() => { setAnswer(option); setMessage('') }}><span className="answer-letter">{String.fromCharCode(65 + optionIndex)}</span><span className="answer-value">{option}</span><span className="answer-radio" aria-hidden="true">{answer === option && <span />}</span></button>)}
           </div>
@@ -183,12 +194,16 @@ export default function StudentPractice({
         </article>
 
         <aside className="practice-help-column">
-          <article className="thinking-card"><span className="thinking-icon">✧</span><span className="eyebrow muted-eyebrow">PISTAS PARA PENSAR</span><h3>Construye el razonamiento.</h3><p>{hintLevel > 0 ? exercise.hints[hintLevel - 1] : 'Intenta resolverlo con calma. Puedes pedir hasta tres pistas; te guiarán sin revelar la respuesta.'}</p><div className="hint-steps" aria-label={`Pista ${hintLevel} de 3`}>{exercise.hints.map((_, hintIndex) => <span className={hintIndex < hintLevel ? 'hint-shown' : ''} key={hintIndex} />)}</div></article>
-          <article className="tutor-integration-card" data-integration-slot="TutorChat"><div className="tutor-slot-icon">✦</div><div><span className="eyebrow muted-eyebrow">TUTOR INTELIGENTE</span><h3>Un acompañante para aprender</h3><p>El espacio está listo para integrar TutorChat cuando el componente del equipo esté disponible.</p><span className="integration-status">Componente pendiente del integrante 3</span></div></article>
+          <TutorChat
+            questionPrompt={exercise.prompt}
+            studentAnswer={answer || 'Aún no ha seleccionado una opción'}
+            errorPattern={inferPracticeErrorPattern(topic, answer)}
+          />
+          <article className="thinking-card"><span className="thinking-icon">✧</span><span className="eyebrow muted-eyebrow">PISTAS RÁPIDAS</span><h3>Construye el razonamiento.</h3><p>{hintLevel > 0 ? exercise.hints[hintLevel - 1] : 'Intenta resolverlo con calma. Puedes pedir pistas al Tutor IA o usar las pistas rápidas.'}</p><div className="hint-steps" aria-label={`Pista ${hintLevel} de 3`}>{exercise.hints.map((_, hintIndex) => <span className={hintIndex < hintLevel ? 'hint-shown' : ''} key={hintIndex} />)}</div></article>
           <article className="practice-focus-card"><span className="focus-check">✓</span><p>Equivocarse es parte del proceso. Aquí avanzas cuando encuentras tu propio camino.</p></article>
         </aside>
       </div>
-      <div className="practice-session-note">Progreso guardado en esta sesión de demostración. La sincronización con el servidor espera el contrato compartido del equipo.</div>
+      <div className="practice-session-note">Tutor Inteligente conectado al motor socrático de AULA AI con respaldo local de alta disponibilidad.</div>
     </section>
   )
 }

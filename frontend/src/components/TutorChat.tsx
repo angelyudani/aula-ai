@@ -79,7 +79,7 @@ export const TutorChat: React.FC<TutorChatProps> = ({
         {
           id: `err-${Date.now()}`,
           sender: "tutor",
-          text: "Revisa si los denominadores son iguales antes de operar. Si son distintos, busca un múltiplo común.",
+          text: "Revisa primero los datos clave del problema y avanza paso a paso sin apresurarte.",
         },
       ]);
     } finally {
@@ -88,66 +88,116 @@ export const TutorChat: React.FC<TutorChatProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-      <div className="bg-indigo-600 text-white px-4 py-3 flex items-center justify-between">
+    <article
+      className="glass-panel"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "0.85rem",
+        padding: "1.15rem",
+        borderRadius: "1rem",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
         <div>
-          <h3 className="font-semibold text-sm">Tutor Inteligente AULA AI</h3>
-          <p className="text-xs text-indigo-100">Guía paso a paso · Sin respuestas directas</p>
+          <span className="eyebrow muted-eyebrow" style={{ display: "block", marginBottom: "0.2rem" }}>
+            TUTOR INTELIGENTE AULA AI
+          </span>
+          <h3 style={{ margin: 0, fontSize: "1rem" }}>Guía socrática paso a paso</h3>
         </div>
-        <span className="text-xs bg-indigo-500 px-2 py-1 rounded-full">Activo</span>
+        <span className="session-pill" style={{ fontSize: "0.72rem", padding: "0.25rem 0.6rem" }}>
+          <span className="live-dot" /> IA Activa
+        </span>
       </div>
 
-      <div className="flex-1 p-4 space-y-3 overflow-y-auto max-h-80 bg-slate-50">
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.6rem",
+          maxHeight: "230px",
+          overflowY: "auto",
+          padding: "0.65rem",
+          borderRadius: "0.75rem",
+          background: "rgba(124, 58, 237, 0.08)",
+          border: "1px solid rgba(168, 85, 247, 0.2)",
+        }}
+      >
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex flex-col max-w-[85%] rounded-lg px-3.5 py-2.5 text-sm ${
-              msg.sender === "student"
-                ? "ml-auto bg-indigo-600 text-white"
-                : "mr-auto bg-white border border-slate-200 text-slate-800"
-            }`}
+            style={{
+              alignSelf: msg.sender === "student" ? "flex-end" : "flex-start",
+              maxWidth: "88%",
+              padding: "0.6rem 0.85rem",
+              borderRadius: "0.75rem",
+              fontSize: "0.84rem",
+              lineHeight: 1.45,
+              background:
+                msg.sender === "student"
+                  ? "linear-gradient(135deg, #7c3aed, #a855f7)"
+                  : "rgba(255, 255, 255, 0.06)",
+              color: msg.sender === "student" ? "#ffffff" : "inherit",
+              border: msg.sender === "tutor" ? "1px solid rgba(168, 85, 247, 0.22)" : "none",
+            }}
           >
             {msg.level && (
-              <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 mb-1">
+              <span
+                style={{
+                  display: "block",
+                  fontSize: "0.68rem",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  color: "#c084fc",
+                  marginBottom: "0.2rem",
+                }}
+              >
                 Pista {msg.level}
               </span>
             )}
-            <p className="leading-relaxed">{msg.text}</p>
+            <p style={{ margin: 0 }}>{msg.text}</p>
           </div>
         ))}
         {loading && (
-          <div className="mr-auto bg-white border border-slate-200 text-slate-500 rounded-lg px-3.5 py-2 text-xs animate-pulse">
+          <div style={{ fontSize: "0.78rem", opacity: 0.75, padding: "0.3rem 0.5rem" }}>
             Analizando tu procedimiento...
           </div>
         )}
       </div>
 
-      <div className="p-3 bg-white border-t border-slate-200 flex flex-col gap-2">
-        <p className="text-xs text-slate-500 font-medium">Elige el nivel de ayuda:</p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
+        <span style={{ fontSize: "0.75rem", opacity: 0.75 }}>Elige el nivel de ayuda:</span>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.45rem" }}>
           <button
+            type="button"
             onClick={() => requestHint(1)}
             disabled={loading}
-            className="px-3 py-2 text-xs font-semibold rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition disabled:opacity-50"
+            className="button button-quiet"
+            style={{ padding: "0.5rem 0.45rem", fontSize: "0.75rem", justifyContent: "center" }}
           >
             1. Pista guía
           </button>
           <button
+            type="button"
             onClick={() => requestHint(2)}
             disabled={loading || unlockedLevel < 1}
-            className="px-3 py-2 text-xs font-semibold rounded-lg bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200 transition disabled:opacity-40"
+            className="button button-quiet"
+            style={{ padding: "0.5rem 0.45rem", fontSize: "0.75rem", justifyContent: "center" }}
           >
-            2. Explicar concepto
+            2. Concepto
           </button>
           <button
+            type="button"
             onClick={() => requestHint(3)}
             disabled={loading || unlockedLevel < 2}
-            className="px-3 py-2 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 transition disabled:opacity-40"
+            className="button button-quiet"
+            style={{ padding: "0.5rem 0.45rem", fontSize: "0.75rem", justifyContent: "center" }}
           >
-            3. Ver ejemplo similar
+            3. Ejemplo
           </button>
         </div>
       </div>
-    </div>
+    </article>
   );
 };
