@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-"scripts": {
+  "scripts": {
     "dev": "tsx watch src/index.ts"
   },
   "keywords": [],
@@ -11,6 +11,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@google/genai": "^3.6.1",
     "@supabase/supabase-js": "^2.119.2",
     "cors": "^2.8.6",
     "dotenv": "^18.0.10",
