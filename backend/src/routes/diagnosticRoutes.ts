@@ -15,15 +15,26 @@ router.get('/diagnostic/questions', (_req: Request, res: Response) => {
 router.post('/diagnostic', async (req: Request, res: Response) => {
   try {
     const { studentId, answers } = req.body;
-    if (!studentId || !Array.isArray(answers)) {
-      return res.status(400).json({ error: 'Faltan studentId o answers' });
+    if (typeof studentId !== 'string' || !studentId.trim() || !Array.isArray(answers)) {
+      return res.status(400).json({ error: 'Se requieren studentId y answers válidos' });
+    }
+    const validAnswers = answers.every((answer) =>
+      answer && typeof answer.questionId === 'string' && typeof answer.answer === 'string'
+    );
+    if (!validAnswers) {
+      return res.status(400).json({ error: 'Cada respuesta debe incluir questionId y answer como texto' });
+    }
+    const submittedIds = answers.map((answer: { questionId: string }) => answer.questionId);
+    const expectedIds = mathQuestions.map((question) => question.id);
+    if (submittedIds.length !== expectedIds.length || new Set(submittedIds).size !== expectedIds.length || expectedIds.some((id) => !submittedIds.includes(id))) {
+      return res.status(400).json({ error: `Envía una respuesta para cada una de las ${expectedIds.length} preguntas` });
     }
 
     const result = evaluateDiagnostic(studentId, answers);
 
     const rowsToInsert = Object.entries(result.scoresByTopic).map(([topic, score]) => {
-      const mistake = result.detectedMistakes.find((m) =>
-        topic === 'fracciones_suma' ? m.questionId.startsWith('frac') : m.questionId.startsWith('mult')
+      const mistake = result.detectedMistakes.find((item) =>
+        mathQuestions.find((question) => question.id === item.questionId)?.topic === topic
       );
       return {
         student_id: studentId,
@@ -34,7 +45,10 @@ router.post('/diagnostic', async (req: Request, res: Response) => {
     });
 
     const { error } = await supabase.from('diagnostic_results').insert(rowsToInsert);
-    if (error) console.error('Aviso Supabase:', error.message);
+    if (error) {
+      console.error('Error al guardar el diagnóstico en Supabase:', error.message);
+      return res.status(500).json({ error: 'No se pudo guardar el diagnóstico' });
+    }
 
     return res.json(result);
   } catch (err) {

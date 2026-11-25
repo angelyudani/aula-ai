@@ -43,4 +43,13 @@ export interface TeacherSummaryResponse {
   averageScore: number;
   topicFailureRates: { topic: string; failurePercentage: number }[];
   studentsAtRisk: { id: string; name: string; weakestTopic: string; score: number }[];
+  students: {
+    id: string;
+    name: string;
+    group: string;
+    averageScore: number;
+    scoresByTopic: Record<string, number>;
+    weakestTopic: string;
+    completedAt: string | null;
+  }[];
 }
