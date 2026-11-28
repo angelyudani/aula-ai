@@ -1,0 +1,29 @@
+# Foundathyon Deploy: https://aula-ai-the-thonys.foundathyon.dev
+# Needs the repository secret FOUNDATHYON_REGISTRY_TOKEN (Settings > Secrets and variables > Actions)
+# with the fdr_... token of the service. Configuring the service from the panel installs both.
+name: "Foundathyon Deploy (aula-ai-the-thonys)"
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "foundathyon-deploy-aula-ai-the-thonys"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: fundathyon/deploy-action@v1
+        with:
+          organization: "the-thonys"
+          service: "aula-ai"
+          token: ${{ secrets.FOUNDATHYON_REGISTRY_TOKEN }}
+          registry: "registry.foundathyon.dev"
+          url: "https://aula-ai-the-thonys.foundathyon.dev"
