@@ -7,6 +7,7 @@ import StudentReading from './pages/StudentReading'
 import TeacherDashboard from './pages/TeacherDashboard'
 import ProfileAvatar from './components/ProfileAvatar'
 import CustomCursor from './components/CustomCursor'
+import FloatingChatBubble from './components/FloatingChatBubble'
 import { initialPracticeStats, type DiagnosticReport, type PracticeStats } from './types/student'
 
 export type NavigationRequest = { section: Section; sequence: number }
@@ -84,7 +85,7 @@ function App() {
         <header className="topbar">
           <div className="topbar-title">
             <span className="breadcrumb">AULA AI <span>/</span> {mode === 'student' ? 'ESPACIO DEL ESTUDIANTE' : 'ESPACIO DOCENTE'}</span>
-          <h2>{mode === 'student' ? sectionTitles[activeSection] : 'Tu grupo, más cerca'}</h2>
+            <h2>{mode === 'student' ? sectionTitles[activeSection] : 'Tu grupo, más cerca'}</h2>
           </div>
           <div className="topbar-right">
             <button
@@ -135,6 +136,11 @@ function App() {
           <span className="footer-right"><span className="footer-star">✦</span> AULA AI <span className="footer-separator">·</span> 2026</span>
         </footer>
       </main>
+
+      <FloatingChatBubble
+        role={mode}
+        contextHint={mode === 'student' ? sectionTitles[activeSection] : 'Panel Docente'}
+      />
     </div>
   )
 }
