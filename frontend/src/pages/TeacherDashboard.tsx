@@ -3,6 +3,7 @@ import { teacherDemoStudent, teacherMockStudents, type TeacherStudent } from '..
 import { getTeacherSummary } from '../services/api'
 import type { TeacherSummaryResponse } from '../types/api'
 import { topicLabels, type StudentTopic } from '../types/student'
+import TeacherGuides from './TeacherGuides'
 
 type StudentFilter = 'all' | 'risk'
 
@@ -68,6 +69,7 @@ function StudentRow({ student }: { student: TeacherStudent }) {
 }
 
 export default function TeacherDashboard() {
+  const [teacherView, setTeacherView] = useState<'summary' | 'guides'>('summary')
   const [filter, setFilter] = useState<StudentFilter>('all')
   const [query, setQuery] = useState('')
   const [showAll, setShowAll] = useState(false)
@@ -109,6 +111,10 @@ export default function TeacherDashboard() {
     : Math.round(students.reduce((sum, student) => sum + student.average, 0) / students.length)
   const fractionTrouble = liveSummary?.topicFailureRates.find((item) => item.topic === 'fracciones')?.failurePercentage
     ?? Math.round((students.filter((student) => student.topics.fracciones < 60).length / students.length) * 100)
+  const topicFailureRates = liveSummary?.topicFailureRates ?? topicOrder.map((topic) => ({
+    topic,
+    failurePercentage: Math.round((students.filter((student) => student.topics[topic] < 60).length / Math.max(students.length, 1)) * 100),
+  }))
   const sofia = liveSummary?.students.find((student) => student.id === teacherDemoStudent.id)
 
   const filteredStudents = useMemo(() => {
@@ -131,6 +137,19 @@ export default function TeacherDashboard() {
         </div>
         <div className="teacher-data-chip"><span className={summaryStatus === 'connected' ? 'teacher-live-dot' : 'teacher-demo-dot'} />{summaryStatus === 'loading' ? 'Cargando grupo…' : summaryStatus === 'connected' ? 'Datos de Supabase' : 'Datos de demostración'}</div>
       </div>
+
+      <div className="teacher-view-switch" role="group" aria-label="Secciones del espacio docente">
+        <button type="button" className={teacherView === 'summary' ? 'is-active' : ''} aria-pressed={teacherView === 'summary'} onClick={() => setTeacherView('summary')}>
+          Resumen del grupo
+        </button>
+        <button type="button" className={teacherView === 'guides' ? 'is-active' : ''} aria-pressed={teacherView === 'guides'} onClick={() => setTeacherView('guides')}>
+          Guías didácticas
+        </button>
+      </div>
+
+      {teacherView === 'guides' ? (
+        <TeacherGuides topicFailureRates={topicFailureRates} />
+      ) : <>
 
       <div className="teacher-summary-grid">
         <article className="teacher-summary-card teacher-summary-average">
@@ -200,6 +219,7 @@ export default function TeacherDashboard() {
         )}
         <p className="teacher-demo-disclaimer">Los nombres y resultados de este panel son ficticios y se usan únicamente para la demostración.</p>
       </section>
+      </>}
     </section>
   )
 }
