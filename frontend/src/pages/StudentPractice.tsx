@@ -364,6 +364,7 @@ export default function StudentPractice({
   const [reflection, setReflection] = useState<MicroReflection | null>(null)
   const [hintLevel, setHintLevel] = useState(0)
   const [solved, setSolved] = useState(false)
+  const [incorrectAnswerLocked, setIncorrectAnswerLocked] = useState(false)
   const [solvedInRun, setSolvedInRun] = useState(0)
   const exercise = topicExercises[index]
   const currentTopicPercentage = report?.topics.find((item) => item.topic === topic)?.percentage ?? 0
@@ -376,6 +377,7 @@ export default function StudentPractice({
     setReflection(null)
     setHintLevel(0)
     setSolved(false)
+    setIncorrectAnswerLocked(false)
     setSolvedInRun(0)
   }, [report?.completedAt])
 
@@ -393,7 +395,7 @@ export default function StudentPractice({
   }
 
   const checkAnswer = () => {
-    if (!answer || solved) return
+    if (!answer || solved || incorrectAnswerLocked) return
     const levelLabel = getStudentLevelLabel(currentTopicPercentage)
 
     if (answer === exercise.answer) {
@@ -415,6 +417,7 @@ export default function StudentPractice({
         updatedAt: new Date().toISOString(),
       })
     } else {
+      setIncorrectAnswerLocked(true)
       const specificReason =
         exercise.mistakeNotes[answer] ||
         'La opción elegida no conserva la relación matemática del problema. Revisa el procedimiento antes de calcular.'
@@ -440,6 +443,7 @@ export default function StudentPractice({
     setReflection(null)
     setHintLevel(0)
     setSolved(false)
+    setIncorrectAnswerLocked(false)
   }
 
   const revealHint = () => setHintLevel((current) => Math.min(current + 1, exercise.hints.length))
@@ -467,7 +471,7 @@ export default function StudentPractice({
           <div className="practice-rec-main"><span className={`topic-icon ${topicIconClass(target)}`}>{topicSymbol(target)}</span><div><span className="topic-overline">EMPEZAMOS POR TU ÁREA DE OPORTUNIDAD</span><h2>{topicLabels[target]}</h2></div><strong className="practice-score">{report.topics.find((item) => item.topic === target)?.percentage ?? 0}%<small> dominio</small></strong></div>
           <p>{recommendationReason(target, report.topics.find((item) => item.topic === target)?.percentage ?? 0)}</p>
           <div className="topic-switch" role="group" aria-label="Elegir tema de práctica">
-            {(['suma', 'resta', 'multiplicacion', 'fracciones'] as StudentTopic[]).map((item) => <button key={item} type="button" className={topic === item ? 'selected' : ''} aria-pressed={topic === item} onClick={() => { setSelectedTopic(item); setIndex(0); setAnswer(''); setMessage(''); setReflection(null); setHintLevel(0); setSolved(false); setSolvedInRun(0) }}>{topicLabels[item]} <span>{report.topics.find((row) => row.topic === item)?.percentage ?? 0}%</span></button>)}
+            {(['suma', 'resta', 'multiplicacion', 'fracciones'] as StudentTopic[]).map((item) => <button key={item} type="button" className={topic === item ? 'selected' : ''} aria-pressed={topic === item} onClick={() => { setSelectedTopic(item); setIndex(0); setAnswer(''); setMessage(''); setReflection(null); setHintLevel(0); setSolved(false); setIncorrectAnswerLocked(false); setSolvedInRun(0) }}>{topicLabels[item]} <span>{report.topics.find((row) => row.topic === item)?.percentage ?? 0}%</span></button>)}
           </div>
         </article>
 
@@ -486,7 +490,7 @@ export default function StudentPractice({
           <div className="exercise-progress-track" aria-hidden="true"><span style={{ width: `${Math.round(((index + 1) / topicExercises.length) * 100)}%` }} /></div>
           <div className="exercise-question-block"><span className="question-kicker">PIENSA PASO A PASO</span><h3 id="exercise-question">{exercise.prompt}</h3><p>Elige una opción. Al comprobar, verás por qué se acepta o rechaza tu razonamiento.</p></div>
           <div className="exercise-options" role="group" aria-label="Opciones de respuesta">
-            {exercise.options.map((option, optionIndex) => <button key={option} type="button" className={`answer-option ${answer === option ? 'is-selected' : ''}`} aria-pressed={answer === option} disabled={solved} onClick={() => { setAnswer(option); setMessage(''); setReflection(null) }}><span className="answer-letter">{String.fromCharCode(65 + optionIndex)}</span><span className="answer-value">{option}</span><span className="answer-radio" aria-hidden="true">{answer === option && <span />}</span></button>)}
+            {exercise.options.map((option, optionIndex) => <button key={option} type="button" className={`answer-option ${answer === option ? 'is-selected' : ''}`} aria-pressed={answer === option} disabled={solved || incorrectAnswerLocked} onClick={() => { setAnswer(option); setMessage(''); setReflection(null) }}><span className="answer-letter">{String.fromCharCode(65 + optionIndex)}</span><span className="answer-value">{option}</span><span className="answer-radio" aria-hidden="true">{answer === option && <span />}</span></button>)}
           </div>
           {message && (
             <div className={`practice-feedback ${solved ? 'feedback-success' : 'feedback-retry'}`} role="status">
@@ -504,7 +508,7 @@ export default function StudentPractice({
               </div>
             </div>
           )}
-          {solved ? <div className="exercise-actions"><span className="answer-hint">¡Avanzaste un paso!</span><button className="button button-primary" type="button" onClick={nextExercise}>Siguiente ejercicio <span aria-hidden="true">→</span></button></div> : <div className="exercise-actions"><button className="button button-quiet" type="button" onClick={revealHint} disabled={hintLevel >= exercise.hints.length}>Dame una pista <span aria-hidden="true">✧</span></button><button className="button button-primary" type="button" disabled={!answer} onClick={checkAnswer}>Comprobar <span aria-hidden="true">→</span></button></div>}
+          {solved ? <div className="exercise-actions"><span className="answer-hint">¡Avanzaste un paso!</span><button className="button button-primary" type="button" onClick={nextExercise}>Siguiente ejercicio <span aria-hidden="true">→</span></button></div> : <div className="exercise-actions"><button className="button button-quiet" type="button" onClick={revealHint} disabled={hintLevel >= exercise.hints.length}>Dame una pista <span aria-hidden="true">✧</span></button>{incorrectAnswerLocked ? <button className="button button-primary" type="button" onClick={nextExercise}>Siguiente ejercicio <span aria-hidden="true">→</span></button> : <button className="button button-primary" type="button" disabled={!answer} onClick={checkAnswer}>Comprobar <span aria-hidden="true">→</span></button>}</div>}
         </article>
 
         <aside className="practice-help-column">
